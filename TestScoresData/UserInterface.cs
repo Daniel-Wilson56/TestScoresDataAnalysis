@@ -323,7 +323,7 @@ namespace TestScoresData
         }
         private void DeleteResult()
         {
-            (List<int> listOfResultIDs, List<double> listOfScores, List<string> listOfDates, List<int> listOfForeignClassIDs) = database.GetListOfResults("");
+            (List<int> listOfResultIDs, List<double> listOfScores, List<string> listOfDates, List<int> listOfForeignClassIDs) = database.GetListOfResults();
             (List<int> listOfPrimaryClassIDs, List<string> listOfSurnames, List<string> listOfSubjects) = database.GetListOfClasses("");
             List<string> listOfResults = ListBuilder.CreateListOfResults(listOfResultIDs, listOfScores, listOfDates, listOfForeignClassIDs, listOfPrimaryClassIDs, listOfSurnames, listOfSubjects);
             (int input, bool valid) = GetOptionFromList(listOfResults, true);
@@ -374,7 +374,7 @@ namespace TestScoresData
                         }
                         else
                         {
-                            (_, listOfScores, listOfDates, _) = database.GetListOfResults("");
+                            (_, listOfScores, listOfDates, _) = database.GetListOfResults();
                         }
                         return Calculation.ReturnProductMomentCoefficientFromResultData(listOfScores, listOfDates);
                     }

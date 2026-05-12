@@ -125,21 +125,12 @@ namespace TestScoresData
                 }
             }
         }
-        public (List<int>, List<double>, List<string>, List<int>) GetListOfResults(string overwriteQuery)
+        public (List<int>, List<double>, List<string>, List<int>) GetListOfResults(string selectQuery = "select ResultID, Score, DateTaken, ClassID from tblResults order by DateTaken;")
         {
             List<int> resultIDs = new List<int>();
             List<double> scores = new List<double>();
             List<string> dates = new List<string>();
             List<int> classIDs = new List<int>();
-            string selectQuery;
-            if (overwriteQuery == "")
-            {
-                selectQuery = "select ResultID, Score, DateTaken, ClassID from tblResults;";
-            }
-            else
-            {
-                selectQuery = overwriteQuery;
-            }
             using (MySqlCommand selectCommand = new(selectQuery, connection))
             {
                 using (MySqlDataReader selectReader = selectCommand.ExecuteReader())
