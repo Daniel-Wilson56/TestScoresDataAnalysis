@@ -7,13 +7,13 @@ namespace TestScoresData
 {
     public class UserInterface
     {
-        private DatabaseInterface database;
-        private List<string> listOfOptions;
+        private readonly DatabaseInterface database;
+        private List<string> listOfMainOptions;
         public UserInterface(DatabaseInterface databaseInterface)
         {
             this.database = databaseInterface;
-            listOfOptions = new List<string>();
-            SetUpOptions(ref listOfOptions);
+            listOfMainOptions = new List<string>();
+            SetUpOptions(ref listOfMainOptions);
         }
         private void SetUpOptions(ref List<string> listOfOptions)
         {
@@ -143,7 +143,7 @@ namespace TestScoresData
         public bool AskForOptions()
         {
             bool finished = false;
-            (int input, bool valid) = GetOptionFromList(listOfOptions, true);
+            (int input, bool valid) = GetOptionFromList(listOfMainOptions, true);
             switch (input)
             {
                 case 1:

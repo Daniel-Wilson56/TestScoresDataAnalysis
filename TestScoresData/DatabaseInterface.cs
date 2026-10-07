@@ -9,7 +9,14 @@ namespace TestScoresData
         public bool ConnectToDatabase(string password)
         {
             bool success;
-            string connectionString = "server=127.0.0.1;database=TestScoresDB;uid=root;pwd=" + password + ";";
+            MySqlConnectionStringBuilder builder = new MySqlConnectionStringBuilder
+            {
+                Server = "127.0.0.1",
+                UserID = "root",
+                Password = password,
+                Database = "TestScoresDB"
+            };
+            string connectionString = builder.ConnectionString;
             connection = new();
             try
             {
@@ -53,11 +60,12 @@ namespace TestScoresData
         }
         public void DeleteSubject(string subjectToDelete)
         {
-            string insertQuery = "delete from tblSubjects where SubjectName = '" + subjectToDelete + "';";
+            string insertQuery = "delete from tblSubjects where SubjectName = @DeleteSubject;";
             using (MySqlCommand insertCommand = new(insertQuery, connection))
             {
                 try
                 {
+                    insertCommand.Parameters.AddWithValue("@DeleteSubject", subjectToDelete);
                     insertCommand.Prepare();
                     insertCommand.ExecuteNonQuery();
                     Console.WriteLine("Deleted subject.");
@@ -70,21 +78,27 @@ namespace TestScoresData
         }
         public (List<int>, List<string>, List<string>) GetListOfClasses(string subjectToFilterBy)
         {
-            string overload;
+            string? overload;
+            string selectQuery;
             if (subjectToFilterBy == "")
             {
-                overload = "";
+                selectQuery = "select ClassID, TeacherSurname, SubjectName from tblClasses;";
+                overload = null;
             }
             else
             {
-                overload = "where SubjectName = " + subjectToFilterBy;
+                selectQuery = "select ClassID, TeacherSurname, SubjectName from tblClasses @Overload";
+                overload = $"where SubjectName = {subjectToFilterBy};";
             }
             List<int> classIDs = new List<int>();
             List<string> teacherSurnames = new List<string>();
             List<string> subjectNames = new List<string>();
-            string selectQuery = "select ClassID, TeacherSurname, SubjectName from tblClasses" + overload + ";";
             using (MySqlCommand selectCommand = new(selectQuery, connection))
             {
+                if (overload != null)
+                {
+                    selectCommand.Parameters.AddWithValue("@Overload", overload);
+                }
                 using (MySqlDataReader selectReader = selectCommand.ExecuteReader())
                 {
                     while (selectReader.Read())
@@ -110,11 +124,12 @@ namespace TestScoresData
         }
         public void DeleteClass(int classToDelete)
         {
-            string insertQuery = "delete from tblClasses where ClassID = '" + classToDelete + "';";
+            string insertQuery = "delete from tblClasses where ClassID = @DeleteClass;";
             using (MySqlCommand insertCommand = new(insertQuery, connection))
             {
                 try
                 {
+                    insertCommand.Parameters.AddWithValue("@DeleteClass", classToDelete);
                     insertCommand.Prepare();
                     insertCommand.ExecuteNonQuery();
                     Console.WriteLine("Deleted class.");
@@ -125,7 +140,7 @@ namespace TestScoresData
                 }
             }
         }
-        public (List<int>, List<double>, List<string>, List<int>) GetListOfResults(string selectQuery = "select ResultID, Score, DateTaken, ClassID from tblResults order by DateTaken;")
+        public (List<int>, List<double>, List<string>, List<int>) GetListOfResults(string selectQuery = "select ResultID, Score, DateTaken, ClassID from tblResults order by DateTaken;", string extraInfo = "", string extraInfoType = "")
         {
             List<int> resultIDs = new List<int>();
             List<double> scores = new List<double>();
@@ -133,6 +148,17 @@ namespace TestScoresData
             List<int> classIDs = new List<int>();
             using (MySqlCommand selectCommand = new(selectQuery, connection))
             {
+                if (extraInfo != "")
+                {
+                    if (extraInfoType == "ClassID")
+                    {
+                        selectCommand.Parameters.AddWithValue("@ClassID", extraInfo);
+                    }
+                    else
+                    {
+                        selectCommand.Parameters.AddWithValue("@Subject", extraInfo);
+                    }
+                }
                 using (MySqlDataReader selectReader = selectCommand.ExecuteReader())
                 {
                     while (selectReader.Read())
@@ -168,11 +194,12 @@ namespace TestScoresData
         }
         public void DeleteResult(int resultIDToDelete)
         {
-            string insertQuery = "delete from tblResults where ResultID = '" + resultIDToDelete + "';";
+            string insertQuery = "delete from tblResults where ResultID = @DeleteID;";
             using (MySqlCommand insertCommand = new(insertQuery, connection))
             {
                 try
                 {
+                    insertCommand.Parameters.AddWithValue("@DeleteID", resultIDToDelete);
                     insertCommand.Prepare();
                     insertCommand.ExecuteNonQuery();
                     Console.WriteLine("Deleted result.");
@@ -185,23 +212,23 @@ namespace TestScoresData
         }
         public (List<int>, List<double>, List<string>, List<int>) GetListOfResultsWhereClassIDIs(int classIDToSortBy)
         {
-            string query = "select ResultID, Score, DateTaken, ClassID from tblResults where ClassID = " + classIDToSortBy + ";";
-            return GetListOfResults(query);
+            string query = "select ResultID, Score, DateTaken, ClassID from tblResults where ClassID = @ClassID order by DateTaken;";
+            return GetListOfResults(query, Convert.ToString(classIDToSortBy), "ClassID");
         }
         public (List<int>, List<double>, List<string>, List<int>) GetListOfResultsWhereClassIDIs(int classIDToSortBy, int limit)
         {
-            string query = "select ResultID, Score, DateTaken, ClassID from tblResults where ClassID = " + classIDToSortBy + " order by DateTaken desc limit " + limit + ";";
-            return GetListOfResults(query);
+            string query = "select ResultID, Score, DateTaken, ClassID from tblResults where ClassID = @ClassID order by DateTaken limit " + limit + ";";
+            return GetListOfResults(query, Convert.ToString(classIDToSortBy), "ClassID");
         }
         public (List<int>, List<double>, List<string>, List<int>) GetListOfResultsWhereSubjectIs(string subjectToSortBy)
         {
-            string query = "select ResultID, Score, DateTaken, tblResults.ClassID from tblResults, tblClasses where tblResults.ClassID = tblClasses.ClassID and tblClasses.SubjectName = \"" + subjectToSortBy + "\";";
-            return GetListOfResults(query);
+            string query = "select ResultID, Score, DateTaken, tblResults.ClassID from tblResults, tblClasses where tblResults.ClassID = tblClasses.ClassID and tblClasses.SubjectName = \"@Subject\";";
+            return GetListOfResults(query, subjectToSortBy, "Subject");
         }
         public (List<int>, List<double>, List<string>, List<int>) GetListOfResultsWhereSubjectIs(string subjectToSortBy, int limit)
         {
-            string query = "select ResultID, Score, DateTaken, tblResults.ClassID from tblResults, tblClasses where tblResults.ClassID = tblClasses.ClassID and tblClasses.SubjectName = \"" + subjectToSortBy + "\" order by DateTaken desc limit " + limit + ";";
-            return GetListOfResults(query);
+            string query = "select ResultID, Score, DateTaken, tblResults.ClassID from tblResults, tblClasses where tblResults.ClassID = tblClasses.ClassID and tblClasses.SubjectName = \"@Subject\" order by DateTaken desc limit " + limit + ";";
+            return GetListOfResults(query, subjectToSortBy, "Subject");
         }
         public (List<int>, List<double>, List<string>, List<int>) GetListOfResultsWhereNumberOfMostRecentIs(int limit)
         {
